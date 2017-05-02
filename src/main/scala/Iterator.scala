@@ -62,7 +62,9 @@ sealed abstract class DBIterator[E: ClassTag, TT](
         result equalsIgnoreCase primaryKeyColumn
     }
 
-    def currentPosition(): Int = cursor
+    def currentPosition(): Map[String, Int] = {
+        Map("current" -> Math.floor(cursor / chunkSize).toInt, "max" -> Math.floor(max / chunkSize).toInt)
+    }
 
 }
 
