@@ -21,26 +21,29 @@ class DBConnection( val database: String, val username: String, val password: St
 
     private val conn: Connection = DriverManager.getConnection(s"jdbc:postgresql://127.0.0.1:5432/${database}", username, password)
 
-    def execute(sqlContext: String): Unit = {
+    def execute(sqlContext: String, logging: Boolean = false): Unit = {
         val st: Statement = conn.createStatement
         try {
             st.execute(sqlContext)
         } finally {
             st.close()
+            log("EXECUTE : " + sqlContext, logging)
         }
     }
 
-    def delete(target: String): Unit = {
+    def delete(target: String, logging: Boolean = false): Unit = {
         val st: Statement = conn.createStatement
         try {
             val sqlContext: String = "delete from " + target
             st.executeUpdate(sqlContext)
         } finally {
             st.close()
+            log("DELETE : " + target, logging)
         }
+
     }
 
-    def extract(sqlContext: String): List[Map[String,Any]] = {
+    def extract(sqlContext: String, logging: Boolean = false): List[Map[String,Any]] = {
         val st: Statement = conn.createStatement
         val resultSet:List[Map[String,Any]] = try {
             val rs: ResultSet = st.executeQuery(sqlContext)
@@ -50,10 +53,11 @@ class DBConnection( val database: String, val username: String, val password: St
         } finally {
             st.close()
         }
+        log("SELECT : " + resultSet, logging)
         resultSet
     }
 
-    def deploy[T: ClassTag](Factory: SQLEntity[T], limit: Int = 0): List[T] = {
+    def deploy[T: ClassTag](Factory: SQLEntity[T], limit: Int = 0, logging: Boolean = false): List[T] = {
         val cs: Array[String] = implicitly[ClassTag[T]].runtimeClass.getDeclaredFields.map(_.getName)
         val st: Statement = conn.createStatement
         val resultSet:List[T] = try {
@@ -66,10 +70,11 @@ class DBConnection( val database: String, val username: String, val password: St
         } finally {
             st.close()
         }
+        log("SELECT : " + resultSet, logging)
         resultSet
     }
 
-    def update[T: ClassTag](Factory: SQLEntity[T], target: String)(Store: T): Unit = {
+    def update[T: ClassTag](Factory: SQLEntity[T], target: String, logging: Boolean = false)(Store: T): Unit = {
         val cs: Array[String] = implicitly[ClassTag[T]].runtimeClass.getDeclaredFields.map(_.getName)
         val st: Statement = conn.createStatement()
         try {
@@ -78,26 +83,32 @@ class DBConnection( val database: String, val username: String, val password: St
                 case None => "null"
             })
             val sqlContext: String = "insert into " + target + cs.mkString("(", ", ", ")") + " values " + vs.mkString("(", ", ", ")")
-            println(sqlContext)
             st.executeUpdate(sqlContext)
+            log("INSERT : " + vs.mkString("(", ", ", ")"), logging)
         } finally {
             st.close()
         }
     }
 
-    def copy[T: ClassTag](Factory: SQLEntity[T], target: String): Unit = {
+    def copy[T: ClassTag](Factory: SQLEntity[T], target: String, logging: Boolean = false): Unit = {
         val st: Statement = conn.createStatement
         try {
             val sqlContext: String = "create table " + target + " ( like " + Factory.table + " including indexes )"
             st.executeUpdate(sqlContext)
         } finally {
             st.close()
+            log("COPY TABLE : " + target, logging)
         }
     }
 
     def iterateOnce[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, validation: Boolean = false): Iterator[T] = new DBOnceIterator(Factory, primaryKeyColumn, 1, validation)(database, conn)
 
     def iterateGroup[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int = 1, validation: Boolean = false): Iterator[List[T]] = new DBGroupedIterator(Factory, primaryKeyColumn, chunkSize, validation)(database, conn)
+
+    def log(logContext: String, logging: Boolean): Unit = logging match {
+        case true => println(logContext)
+        case false => Unit
+    }
 
     def release(): Unit = {
         conn.close()
