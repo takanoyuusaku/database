@@ -40,6 +40,7 @@ object wrapper {
             while (strings.hasNext) {
                 buffer.append(expressions.next match {
                     case x: DateTime => "\'" + x.toString("yyyy-MM-dd HH:mm:ss") + "\'"
+                    case x: String => "\'" + x.replace("'", "''") + "\'"
                     case x => "\'" + x.toString + "\'"
                 })
                 buffer.append(strings.next)
