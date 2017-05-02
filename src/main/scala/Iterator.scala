@@ -27,8 +27,6 @@ sealed abstract class DBIterator[E: ClassTag, TT](
 
     def next(): TT
 
-    def pointer(): Map[String, Int]
-
     def hasNext(): Boolean = {
         running = if (cursor <= max) true else false
         running
@@ -47,6 +45,7 @@ sealed abstract class DBIterator[E: ClassTag, TT](
     }
 
     def validator(rs: ResultSet): E = {
+        println("Current Access -> " + Factory.table + " :: " +  Math.floor(cursor / chunkSize).toInt + "/" + Math.floor(max / chunkSize).toInt)
         log ::= rs.getLong(primaryKeyColumn)
         assert(log.length == log.distinct.length, "Error [Arugument Column Invalid]:: primary key column not unique.")
         Factory(rs)
@@ -88,10 +87,6 @@ class DBOnceIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: Strin
         result
     }
 
-    def pointer(): Map[String, Int] = {
-        Map("current" -> cursor, "max" -> max)
-    }
-
 }
 
 class DBGroupedIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int, validation: Boolean)(database: String, conn: Connection )
@@ -114,10 +109,6 @@ class DBGroupedIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: St
             st.close()
         }
         result
-    }
-
-    def pointer(): Map[String, Int] = {
-        Map("current" -> Math.floor(cursor / chunkSize).toInt, "max" -> Math.floor(max / chunkSize).toInt)
     }
 
 }
