@@ -101,9 +101,9 @@ class DBConnection( val database: String, val username: String, val password: St
         }
     }
 
-    def iterateOnce[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, validation: Boolean = false): Iterator[T] = new DBOnceIterator(Factory, primaryKeyColumn, 1, validation)(database, conn)
+    def iterateOnce[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, validation: Boolean = false): DBIterator[T] = new DBOnceIterator(Factory, primaryKeyColumn, 1, validation)(database, conn)
 
-    def iterateGroup[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int = 1, validation: Boolean = false): Iterator[List[T]] = new DBGroupedIterator(Factory, primaryKeyColumn, chunkSize, validation)(database, conn)
+    def iterateGroup[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int = 1, validation: Boolean = false): DBIterator[List[T]] = new DBGroupedIterator(Factory, primaryKeyColumn, chunkSize, validation)(database, conn)
 
     def log(logContext: String, logging: Boolean): Unit = logging match {
         case true => println(logContext)

@@ -31,10 +31,11 @@ sealed abstract class DBAbstractIterator[E: ClassTag, TT](
 
     override protected var running: Boolean = true
     override protected var cursor: Int = 0
-    override protected var history: List[Long] = List.empty[Long]
     override protected val max: Int = count()
     override protected val columns: String = implicitly[ClassTag[E]].runtimeClass.getDeclaredFields.map(_.getName).mkString(", ")
     override protected val conditions: String = s" order by ${primaryKeyColumn} limit ${chunkSize} offset "
+
+    override protected var history: List[Long] = List.fill(max)(0: Long)
 
     override def hasNext(): Boolean = {
         running = if (cursor <= max) true else false
@@ -63,7 +64,7 @@ sealed abstract class DBAbstractIterator[E: ClassTag, TT](
     }
 
     def validator(rs: ResultSet): E = {
-        history ::= rs.getLong(primaryKeyColumn)
+        history() = rs.getLong(primaryKeyColumn)
         assert(history.length == history.distinct.length, "Error [Arugument Column Invalid]:: primary key column not unique.")
         Factory(rs)
     }
