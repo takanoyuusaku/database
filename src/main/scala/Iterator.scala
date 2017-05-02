@@ -62,6 +62,8 @@ sealed abstract class DBIterator[E: ClassTag, TT](
         result equalsIgnoreCase primaryKeyColumn
     }
 
+    def currentPosition(): Int = cursor
+
 }
 
 class DBOnceIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int, validation: Boolean)(database: String, conn: Connection)
