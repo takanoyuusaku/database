@@ -27,6 +27,8 @@ sealed abstract class DBIterator[E: ClassTag, TT](
 
     def next(): TT
 
+    def pointer(): Map[String, Int]
+
     def hasNext(): Boolean = {
         running = if (cursor <= max) true else false
         running
@@ -62,10 +64,6 @@ sealed abstract class DBIterator[E: ClassTag, TT](
         result equalsIgnoreCase primaryKeyColumn
     }
 
-    def pointer(): Map[String, Int] = {
-        Map("current" -> Math.floor(cursor / chunkSize).toInt, "max" -> Math.floor(max / chunkSize).toInt)
-    }
-
 }
 
 class DBOnceIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int, validation: Boolean)(database: String, conn: Connection)
@@ -90,6 +88,10 @@ class DBOnceIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: Strin
         result
     }
 
+    def pointer(): Map[String, Int] = {
+        Map("current" -> cursor, "max" -> max)
+    }
+
 }
 
 class DBGroupedIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: String, chunkSize: Int, validation: Boolean)(database: String, conn: Connection )
@@ -112,6 +114,10 @@ class DBGroupedIterator[T: ClassTag](Factory: SQLEntity[T], primaryKeyColumn: St
             st.close()
         }
         result
+    }
+
+    def pointer(): Map[String, Int] = {
+        Map("current" -> Math.floor(cursor / chunkSize).toInt, "max" -> Math.floor(max / chunkSize).toInt)
     }
 
 }
